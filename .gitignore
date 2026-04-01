@@ -1,0 +1,29 @@
+# Build artifacts
+build/
+install/
+cmake-build-*/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln
+*.vcxproj*
+
+# Compiled
+*.exe
+*.o
+*.obj
+*.so
+*.dylib
+*.a
+*.lib
+*.dll
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Game data
+highscores.dat
