@@ -3,69 +3,52 @@
 
 namespace snakepro {
 
-float Renderer::shakeAmount_ = 0;
-float Renderer::shakeTimer_ = 0;
+const sf::Font* Renderer::font_ = nullptr;
 
-static Rectangle makeRect(float x, float y, float w, float h) {
-    Rectangle r;
-    r.x = x; r.y = y; r.width = w; r.height = h;
-    return r;
+void Renderer::setFont(const sf::Font& font) {
+    font_ = &font;
 }
 
-void Renderer::drawRoundedRect(float x, float y, float w, float h, float roundness, Color col) {
-    DrawRectangleRounded(makeRect(x, y, w, h), roundness, 8, col);
+const sf::Font& Renderer::getFont() {
+    static sf::Font defaultFont;
+    return font_ ? *font_ : defaultFont;
 }
 
-void Renderer::drawRoundedRectOutline(float x, float y, float w, float h, float roundness, float thickness, Color col) {
-    DrawRectangleRoundedLines(makeRect(x, y, w, h), roundness, 8, thickness, col);
+void Renderer::drawRoundedRect(sf::RenderTarget& target, float x, float y, float w, float h, float radius, sf::Color color) {
+    sf::RectangleShape rect(sf::Vector2f(w, h));
+    rect.setPosition(x, y);
+    rect.setFillColor(color);
+    rect.setRadius(radius);
+    target.draw(rect);
 }
 
-void Renderer::drawGlowCircle(float x, float y, float radius, Color core, Color glow, float glowRadius) {
-    DrawCircle(x, y, glowRadius, glow);
-    DrawCircle(x, y, radius, core);
-    DrawCircle(x, y, radius * 0.5f, WHITE);
+void Renderer::drawRoundedOutline(sf::RenderTarget& target, float x, float y, float w, float h, float radius, float thickness, sf::Color color) {
+    sf::RectangleShape rect(sf::Vector2f(w, h));
+    rect.setPosition(x, y);
+    rect.setFillColor(sf::Color::Transparent);
+    rect.setOutlineColor(color);
+    rect.setOutlineThickness(thickness);
+    rect.setRadius(radius);
+    target.draw(rect);
 }
 
-void Renderer::drawGradientRect(float x, float y, float w, float h, Color top, Color bottom) {
-    DrawRectangleGradientV(x, y, w, h, top, bottom);
+void Renderer::drawTextCentered(sf::RenderTarget& target, const std::string& text, float cx, float cy, unsigned int size, sf::Color color) {
+    sf::Text t(text, getFont(), size);
+    sf::FloatRect bounds = t.getLocalBounds();
+    t.setOrigin(bounds.width / 2, bounds.height / 2 - bounds.height * 0.1f);
+    t.setPosition(cx, cy);
+    t.setFillColor(color);
+    target.draw(t);
 }
 
-void Renderer::drawTextCentered(const char* text, float cx, float cy, int fontSize, Color col) {
-    int tw = MeasureText(text, fontSize);
-    DrawText(text, cx - tw / 2, cy - fontSize / 2, fontSize, col);
-}
-
-void Renderer::drawTextShadow(const char* text, float x, float y, int fontSize, Color col, Color shadow, float offset) {
-    DrawText(text, x + offset, y + offset, fontSize, shadow);
-    DrawText(text, x, y, fontSize, col);
-}
-
-void Renderer::setScreenShake(float amount) {
-    shakeAmount_ = amount;
-    shakeTimer_ = 0.15f;
-}
-
-float Renderer::getScreenShake() {
-    return shakeAmount_;
-}
-
-void Renderer::updateScreenShake(float dt) {
-    if (shakeTimer_ > 0) {
-        shakeTimer_ -= dt;
-        if (shakeTimer_ <= 0) {
-            shakeAmount_ = 0;
-        }
-    }
-}
-
-void Renderer::drawScreenShake(float amount) {
-    if (amount > 0.5f) {
-        float sx = (static_cast<float>(rand() % 200) / 100.f - 1.f) * amount;
-        float sy = (static_cast<float>(rand() % 200) / 100.f - 1.f) * amount;
-        BeginBlendMode(BLEND_ALPHA);
-        EndBlendMode();
-        rlTranslatef(sx, sy, 0);
-    }
+void Renderer::drawTextShadow(sf::RenderTarget& target, const std::string& text, float x, float y, unsigned int size, sf::Color color, sf::Color shadow, float offset) {
+    sf::Text t(text, getFont(), size);
+    t.setPosition(x + offset, y + offset);
+    t.setFillColor(shadow);
+    target.draw(t);
+    t.setPosition(x, y);
+    t.setFillColor(color);
+    target.draw(t);
 }
 
 }

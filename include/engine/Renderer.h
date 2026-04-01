@@ -1,26 +1,21 @@
 #pragma once
 
-#include "core/Math.h"
-#include <raylib.h>
+#include <SFML/Graphics.hpp>
+#include <string>
 
 namespace snakepro {
 
 class Renderer {
 public:
-    static void drawRoundedRect(float x, float y, float w, float h, float roundness, Color col);
-    static void drawRoundedRectOutline(float x, float y, float w, float h, float roundness, float thickness, Color col);
-    static void drawGlowCircle(float x, float y, float radius, Color core, Color glow, float glowRadius);
-    static void drawGradientRect(float x, float y, float w, float h, Color top, Color bottom);
-    static void drawTextCentered(const char* text, float cx, float cy, int fontSize, Color col);
-    static void drawTextShadow(const char* text, float x, float y, int fontSize, Color col, Color shadow, float offset = 2);
-    static void drawScreenShake(float amount);
-    static void setScreenShake(float amount);
-    static float getScreenShake();
-    static void updateScreenShake(float dt);
+    static void drawRoundedRect(sf::RenderTarget& target, float x, float y, float w, float h, float radius, sf::Color color);
+    static void drawRoundedOutline(sf::RenderTarget& target, float x, float y, float w, float h, float radius, float thickness, sf::Color color);
+    static void drawTextCentered(sf::RenderTarget& target, const std::string& text, float cx, float cy, unsigned int size, sf::Color color);
+    static void drawTextShadow(sf::RenderTarget& target, const std::string& text, float x, float y, unsigned int size, sf::Color color, sf::Color shadow, float offset = 2);
+    static void setFont(const sf::Font& font);
+    static const sf::Font& getFont();
 
 private:
-    static float shakeAmount_;
-    static float shakeTimer_;
+    static const sf::Font* font_;
 };
 
 }

@@ -1,32 +1,20 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
+#include <cmath>
+
 namespace snakepro {
 
-struct Vec2 {
-    float x = 0;
-    float y = 0;
+using Vec2 = sf::Vector2f;
+using IVec2 = sf::Vector2i;
 
-    Vec2 operator+(const Vec2& o) const { return {x + o.x, y + o.y}; }
-    Vec2 operator-(const Vec2& o) const { return {x - o.x, y - o.y}; }
-    Vec2 operator*(float s) const { return {x * s, y * s}; }
-    Vec2 operator/(float s) const { return {x / s, y / s}; }
-    Vec2& operator+=(const Vec2& o) { x += o.x; y += o.y; return *this; }
-    Vec2& operator-=(const Vec2& o) { x -= o.x; y -= o.y; return *this; }
-    Vec2& operator*=(float s) { x *= s; y *= s; return *this; }
-    float length() const { return sqrtf(x * x + y * y); }
-    Vec2 normalized() const { float l = length(); return l > 0 ? *this / l : Vec2{0, 0}; }
-};
-
-inline bool operator==(const Vec2& a, const Vec2& b) {
-    return a.x == b.x && a.y == b.y;
+inline float length(const Vec2& v) {
+    return std::sqrt(v.x * v.x + v.y * v.y);
 }
 
-struct IVec2 {
-    int x = 0;
-    int y = 0;
-
-    bool operator==(const IVec2& o) const { return x == o.x && y == o.y; }
-    bool operator!=(const IVec2& o) const { return !(*this == o); }
-};
+inline Vec2 normalize(const Vec2& v) {
+    float l = length(v);
+    return l > 0 ? v / l : Vec2{0, 0};
+}
 
 }

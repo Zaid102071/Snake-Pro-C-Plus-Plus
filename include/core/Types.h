@@ -14,6 +14,6 @@ inline Direction opposite(Direction d) {
     }
 }
 
-enum class GameState { Menu, Playing, Paused, GameOver, HighScores, Settings };
+enum class State { Menu, Playing, Paused, GameOver, HighScores };
 
 }

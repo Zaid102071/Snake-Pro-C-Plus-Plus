@@ -2,170 +2,214 @@
 #include <cmath>
 #include <algorithm>
 #include <sstream>
+#include <filesystem>
 
 namespace snakepro {
 
 Game::Game()
-    : snake_(gridW_ / 2, gridH_ / 2),
-      frameCounter_(0) {
-    cellSize_ = 28;
-    int boardPixelW = gridW_ * cellSize_;
-    int boardPixelH = gridH_ * cellSize_;
-    boardX_ = (Settings::kScreenWidth - boardPixelW) / 2;
-    boardY_ = 90;
+    : window_(sf::VideoMode(Config::kScreenWidth, Config::kScreenHeight), Config::kTitle, sf::Style::Titlebar | sf::Style::Close),
+      snake_(gridW_ / 2, gridH_ / 2) {
+    window_.setFramerateLimit(60);
+
+    std::filesystem::path fontPath = std::filesystem::current_path() / "assets" / "font.ttf";
+    if (font_.openFromFile(fontPath.string())) {
+        Renderer::setFont(font_);
+    }
+
+    int boardW = gridW_ * cellSize_;
+    int boardH = gridH_ * cellSize_;
+    boardX_ = (Config::kScreenWidth - boardW) / 2;
+    boardY_ = 100;
+
     food_.spawn(gridW_, gridH_, snake_.getBody());
     highScore_ = scoreManager_.getHighScore();
 }
 
-Game::~Game() {
-    CloseWindow();
-}
-
 void Game::run() {
-    InitWindow(Settings::kScreenWidth, Settings::kScreenHeight, Settings::kGameTitle);
-    SetTargetFPS(60);
+    sf::Clock clock;
 
-    while (!WindowShouldClose()) {
+    while (window_.isOpen()) {
+        sf::Event event;
+        while (window_.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window_.close();
+            }
+        }
+
         handleInput();
         update();
-        frameCounter_++;
+        frameTime_ += clock.restart().asSeconds();
         render();
     }
 }
 
 void Game::handleInput() {
-    if (state_ == GameState::Menu) {
-        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-            state_ = GameState::Playing;
-        } else if (IsKeyPressed(KEY_H)) {
-            state_ = GameState::HighScores;
+    if (state_ == State::Menu) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter) || sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+            state_ = State::Playing;
+            sf::sleep(sf::milliseconds(200));
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
+            state_ = State::HighScores;
+            sf::sleep(sf::milliseconds(200));
         }
         return;
     }
 
-    if (state_ == GameState::HighScores) {
-        if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_H)) {
-            state_ = GameState::Menu;
+    if (state_ == State::HighScores) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) || sf::Keyboard::isKeyPressed(sf::Keyboard::Enter) || sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
+            state_ = State::Menu;
+            sf::sleep(sf::milliseconds(200));
         }
         return;
     }
 
-    if (state_ == GameState::GameOver) {
-        if (IsKeyPressed(KEY_R)) {
+    if (state_ == State::GameOver) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
             resetGame();
-        } else if (IsKeyPressed(KEY_Q) || IsKeyPressed(KEY_ESCAPE)) {
-            state_ = GameState::Menu;
+            sf::sleep(sf::milliseconds(200));
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q) || sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+            state_ = State::Menu;
+            sf::sleep(sf::milliseconds(200));
         }
         return;
     }
 
-    if (state_ == GameState::Paused) {
-        if (IsKeyPressed(KEY_P) || IsKeyPressed(KEY_ESCAPE)) {
-            state_ = GameState::Playing;
-        } else if (IsKeyPressed(KEY_Q)) {
-            state_ = GameState::Menu;
+    if (state_ == State::Paused) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::P) || sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+            state_ = State::Playing;
+            sf::sleep(sf::milliseconds(200));
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) {
+            state_ = State::Menu;
+            sf::sleep(sf::milliseconds(200));
         }
         return;
     }
 
-    if (IsKeyPressed(KEY_P) || IsKeyPressed(KEY_ESCAPE)) {
-        state_ = GameState::Paused;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::P) || sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+        state_ = State::Paused;
+        sf::sleep(sf::milliseconds(200));
         return;
     }
 
-    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) {
-        snake_.setDirection(Direction::Up);
-    } else if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) {
-        snake_.setDirection(Direction::Down);
-    } else if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) {
-        snake_.setDirection(Direction::Left);
-    } else if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) {
-        snake_.setDirection(Direction::Right);
+    static sf::Keyboard::Key lastDir = sf::Keyboard::Right;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+        if (lastDir != sf::Keyboard::Down) { snake_.setDirection(Direction::Up); lastDir = sf::Keyboard::Up; }
+    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+        if (lastDir != sf::Keyboard::Up) { snake_.setDirection(Direction::Down); lastDir = sf::Keyboard::Down; }
+    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+        if (lastDir != sf::Keyboard::Right) { snake_.setDirection(Direction::Left); lastDir = sf::Keyboard::Left; }
+    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) || sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+        if (lastDir != sf::Keyboard::Left) { snake_.setDirection(Direction::Right); lastDir = sf::Keyboard::Right; }
     }
 }
 
 void Game::update() {
-    float dt = GetFrameTime();
-    Renderer::updateScreenShake(dt);
+    float dt = frameTime_;
+    if (dt > 0.1f) dt = 0.1f;
+
+    pulseTimer_ += dt;
+    if (shakeAmount_ > 0) {
+        shakeAmount_ *= 0.9f;
+        if (shakeAmount_ < 0.5f) shakeAmount_ = 0;
+    }
+
     particles_.update(dt);
 
-    if (state_ == GameState::Playing) {
+    if (state_ == State::Playing) {
         moveTimer_ += dt;
-        float moveInterval = 1.0f / static_cast<float>(getSpeed());
+        float interval = getInterval();
 
-        if (moveTimer_ >= moveInterval) {
+        if (moveTimer_ >= interval) {
             moveTimer_ = 0;
             snake_.move();
 
             if (snake_.getHead() == food_.getPosition()) {
-                score_ += Settings::kScorePerFood;
+                score_ += Config::kScorePerFood;
                 if (score_ > highScore_) {
                     highScore_ = score_;
                     isNewHighScore_ = true;
                 }
 
-                Vec2 foodPos = Vec2{
+                sf::Vector2f foodPos(
                     static_cast<float>(boardX_ + food_.getPosition().x * cellSize_ + cellSize_ / 2),
                     static_cast<float>(boardY_ + food_.getPosition().y * cellSize_ + cellSize_ / 2)
-                };
+                );
                 spawnEatEffect(foodPos);
-                Renderer::setScreenShake(4);
+                shakeAmount_ = 6;
 
                 snake_.grow();
                 food_.spawn(gridW_, gridH_, snake_.getBody());
             }
 
             if (snake_.checkSelfCollision() || snake_.checkWallCollision(gridW_, gridH_)) {
-                state_ = GameState::GameOver;
+                state_ = State::GameOver;
                 scoreManager_.addScore(score_);
                 spawnDeathEffect();
-                Renderer::setScreenShake(12);
+                shakeAmount_ = 15;
             }
         }
     }
 }
 
 void Game::render() {
-    BeginDrawing();
-    ClearBackground(ColorPalette::bgDark());
+    window_.clear(Colors::bg());
+
+    sf::View view = window_.getView();
+    if (shakeAmount_ > 0) {
+        float sx = (static_cast<float>(rand() % 200) / 100.f - 1.f) * shakeAmount_;
+        float sy = (static_cast<float>(rand() % 200) / 100.f - 1.f) * shakeAmount_;
+        view.move(sx, sy);
+        window_.setView(view);
+    }
 
     drawBackground();
     drawBoard();
 
-    if (state_ == GameState::Menu) {
+    if (state_ == State::Menu) {
         drawMenu();
-    } else if (state_ == GameState::HighScores) {
+    } else if (state_ == State::HighScores) {
         drawHighScores();
     } else {
         drawGrid();
         drawSnake();
         drawFood();
         drawHUD();
-        particles_.render();
+        particles_.render(window_);
 
-        if (state_ == GameState::Paused) drawPaused();
-        if (state_ == GameState::GameOver) drawGameOver();
+        if (state_ == State::Paused) drawPaused();
+        if (state_ == State::GameOver) drawGameOver();
     }
 
-    EndDrawing();
+    window_.setView(window_.getDefaultView());
+    window_.display();
 }
 
 void Game::drawBackground() {
-    for (int y = 0; y < Settings::kScreenHeight; y += 4) {
-        float t = y / static_cast<float>(Settings::kScreenHeight);
-        Color c;
-        c.r = static_cast<unsigned char>(12 + t * 8);
-        c.g = static_cast<unsigned char>(12 + t * 6);
-        c.b = static_cast<unsigned char>(20 + t * 12);
+    sf::RectangleShape bg(sf::Vector2f(Config::kScreenWidth, Config::kScreenHeight));
+    bg.setFillColor(Colors::bg());
+    window_.draw(bg);
+
+    for (int y = 0; y < Config::kScreenHeight; y += 4) {
+        float t = y / static_cast<float>(Config::kScreenHeight);
+        sf::Color c;
+        c.r = static_cast<sf::Uint8>(13 + t * 8);
+        c.g = static_cast<sf::Uint8>(13 + t * 6);
+        c.b = static_cast<sf::Uint8>(22 + t * 14);
         c.a = 255;
-        DrawRectangle(0, y, Settings::kScreenWidth, 4, c);
+        sf::RectangleShape line(sf::Vector2f(Config::kScreenWidth, 4));
+        line.setPosition(0, static_cast<float>(y));
+        line.setFillColor(c);
+        window_.draw(line);
     }
 
-    float time = frameCounter_ * 0.005f;
-    for (int i = 0; i < 5; ++i) {
-        float x = Settings::kScreenWidth * 0.2f + sinf(time + i * 1.5f) * Settings::kScreenWidth * 0.3f;
-        float y = Settings::kScreenHeight * 0.5f + cosf(time * 0.7f + i * 2.0f) * Settings::kScreenHeight * 0.3f;
-        DrawCircle(x, y, 80, Color{0, 180, 130, 3});
+    float time = pulseTimer_ * 0.5f;
+    for (int i = 0; i < 6; ++i) {
+        float x = Config::kScreenWidth * 0.2f + std::sin(time + i * 1.5f) * Config::kScreenWidth * 0.3f;
+        float y = Config::kScreenHeight * 0.5f + std::cos(time * 0.7f + i * 2.0f) * Config::kScreenHeight * 0.3f;
+        sf::CircleShape orb(80);
+        orb.setPosition(x - 80, y - 80);
+        orb.setFillColor(sf::Color(0, 180, 140, 4));
+        window_.draw(orb);
     }
 }
 
@@ -174,21 +218,36 @@ void Game::drawBoard() {
     int bh = gridH_ * cellSize_;
     int pad = 4;
 
-    ColorPalette::drawGlowCircle(0, 0, 0, ColorPalette::bgDark(), ColorPalette::bgDark(), 0);
+    sf::RectangleShape outer(sf::Vector2f(bw + pad * 2 + 6, bh + pad * 2 + 6));
+    outer.setPosition(boardX_ - pad - 3, boardY_ - pad - 3);
+    outer.setFillColor(Colors::border());
+    window_.draw(outer);
 
-    DrawRectangle(boardX_ - pad - 2, boardY_ - pad - 2, bw + pad * 2 + 4, bh + pad * 2 + 4, ColorPalette::border());
-    DrawRectangle(boardX_ - pad, boardY_ - pad, bw + pad * 2, bh + pad * 2, ColorPalette::bgMid());
-    DrawRectangle(boardX_, boardY_, bw, bh, ColorPalette::bgDark());
+    sf::RectangleShape mid(sf::Vector2f(bw + pad * 2, bh + pad * 2));
+    mid.setPosition(boardX_ - pad, boardY_ - pad);
+    mid.setFillColor(Colors::bgLight());
+    window_.draw(mid);
+
+    sf::RectangleShape inner(sf::Vector2f(bw, bh));
+    inner.setPosition(boardX_, boardY_);
+    inner.setFillColor(Colors::board());
+    window_.draw(inner);
 }
 
 void Game::drawGrid() {
     for (int x = 0; x <= gridW_; ++x) {
-        int px = boardX_ + x * cellSize_;
-        DrawLine(px, boardY_, px, boardY_ + gridH_ * cellSize_, ColorPalette::gridLine());
+        sf::Vertex line[] = {
+            sf::Vertex(sf::Vector2f(boardX_ + x * cellSize_, boardY_), Colors::grid()),
+            sf::Vertex(sf::Vector2f(boardX_ + x * cellSize_, boardY_ + gridH_ * cellSize_), Colors::grid())
+        };
+        window_.draw(line, 2, sf::Lines);
     }
     for (int y = 0; y <= gridH_; ++y) {
-        int py = boardY_ + y * cellSize_;
-        DrawLine(boardX_, py, boardX_ + gridW_ * cellSize_, py, ColorPalette::gridLine());
+        sf::Vertex line[] = {
+            sf::Vertex(sf::Vector2f(boardX_, boardY_ + y * cellSize_), Colors::grid()),
+            sf::Vertex(sf::Vector2f(boardX_ + gridW_ * cellSize_, boardY_ + y * cellSize_), Colors::grid())
+        };
+        window_.draw(line, 2, sf::Lines);
     }
 }
 
@@ -201,17 +260,21 @@ void Game::drawSnake() {
         float pad = 1.5f;
 
         if (i == 0) {
-            float pulse = 1.0f + 0.05f * sinf(frameCounter_ * 0.2f);
+            float pulse = 1.0f + 0.04f * std::sin(pulseTimer_ * 5);
             float size = (cs - pad * 2) * pulse;
             float offset = (cs - size) / 2;
 
-            DrawRectangleRounded(
-                Rectangle{px + offset, py + offset, size, size},
-                0.35f, 8, ColorPalette::snakeHead());
+            sf::RectangleShape head(sf::Vector2f(size, size));
+            head.setPosition(px + offset, py + offset);
+            head.setFillColor(Colors::snakeHead());
+            head.setRadius(cs * 0.15f);
+            window_.draw(head);
 
-            DrawRectangleRounded(
-                Rectangle{px + offset + 2, py + offset + 2, size - 4, size - 4},
-                0.3f, 8, Color{100, 255, 210, 200});
+            sf::RectangleShape inner(sf::Vector2f(size - 4, size - 4));
+            inner.setPosition(px + offset + 2, py + offset + 2);
+            inner.setFillColor(sf::Color(100, 255, 220, 180));
+            inner.setRadius(cs * 0.12f);
+            window_.draw(inner);
 
             float eyeSize = cs / 6.5f;
             float eyeOff = cs / 4.5f;
@@ -227,76 +290,108 @@ void Game::drawSnake() {
                 default: break;
             }
 
-            DrawCircle(ex1, ey1, eyeSize, WHITE);
-            DrawCircle(ex2, ey2, eyeSize, WHITE);
-            DrawCircle(ex1, ey1, eyeSize * 0.5f, BLACK);
-            DrawCircle(ex2, ey2, eyeSize * 0.5f, BLACK);
+            sf::CircleShape eye1(eyeSize);
+            eye1.setOrigin(eyeSize, eyeSize);
+            eye1.setPosition(ex1, ey1);
+            eye1.setFillColor(sf::Color::White);
+            window_.draw(eye1);
+
+            sf::CircleShape eye2(eyeSize);
+            eye2.setOrigin(eyeSize, eyeSize);
+            eye2.setPosition(ex2, ey2);
+            eye2.setFillColor(sf::Color::White);
+            window_.draw(eye2);
+
+            sf::CircleShape pupil1(eyeSize * 0.5f);
+            pupil1.setOrigin(eyeSize * 0.5f, eyeSize * 0.5f);
+            pupil1.setPosition(ex1, ey1);
+            pupil1.setFillColor(sf::Color::Black);
+            window_.draw(pupil1);
+
+            sf::CircleShape pupil2(eyeSize * 0.5f);
+            pupil2.setOrigin(eyeSize * 0.5f, eyeSize * 0.5f);
+            pupil2.setPosition(ex2, ey2);
+            pupil2.setFillColor(sf::Color::Black);
+            window_.draw(pupil2);
         } else {
             float t = 1.0f - static_cast<float>(i) / static_cast<float>(body.size());
-            Color col = ColorPalette::snakeBody(t);
+            sf::Color col = Colors::snakeBody(t);
             float shrink = pad + (1.0f - t) * 3;
-            DrawRectangleRounded(
-                Rectangle{px + shrink, py + shrink, cs - shrink * 2, cs - shrink * 2},
-                0.3f, 6, col);
+            sf::RectangleShape seg(sf::Vector2f(cs - shrink * 2, cs - shrink * 2));
+            seg.setPosition(px + shrink, py + shrink);
+            seg.setFillColor(col);
+            seg.setRadius(cs * 0.12f);
+            window_.draw(seg);
         }
     }
 }
 
 void Game::drawFood() {
-    foodPulse_ += GetFrameTime() * 4;
     float px = static_cast<float>(boardX_ + food_.getPosition().x * cellSize_);
     float py = static_cast<float>(boardY_ + food_.getPosition().y * cellSize_);
     float cs = static_cast<float>(cellSize_);
     float cx = px + cs / 2.0f;
     float cy = py + cs / 2.0f;
-    float pulse = 1.0f + 0.12f * sinf(foodPulse_);
+    float pulse = 1.0f + 0.12f * std::sin(pulseTimer_ * 6);
     float radius = (cs / 2.0f - 4.0f) * pulse;
 
-    float glowR = cs * 1.5f + 10 * sinf(foodPulse_ * 0.5f);
-    Color glowCol = ColorPalette::foodGlow();
-    glowCol.a = static_cast<unsigned char>(40 + 30 * sinf(foodPulse_ * 0.5f));
-    DrawCircle(cx, cy, glowR, glowCol);
-    DrawCircle(cx, cy, radius, ColorPalette::food());
-    DrawCircle(cx, cy, radius * 0.45f, Color{255, 255, 220, 255});
+    float glowR = cs * 1.5f + 10 * std::sin(pulseTimer_ * 3);
+    sf::Color glowCol = Colors::foodGlow();
+    glowCol.a = static_cast<sf::Uint8>(40 + 30 * std::sin(pulseTimer_ * 3));
+    sf::CircleShape glow(glowR);
+    glow.setOrigin(glowR, glowR);
+    glow.setPosition(cx, cy);
+    glow.setFillColor(glowCol);
+    window_.draw(glow);
+
+    sf::CircleShape food(radius);
+    food.setOrigin(radius, radius);
+    food.setPosition(cx, cy);
+    food.setFillColor(Colors::food());
+    window_.draw(food);
+
+    sf::CircleShape highlight(radius * 0.4f);
+    highlight.setOrigin(radius * 0.4f, radius * 0.4f);
+    highlight.setPosition(cx, cy);
+    highlight.setFillColor(sf::Color(255, 255, 230, 255));
+    window_.draw(highlight);
 }
 
 void Game::drawHUD() {
     int bw = gridW_ * cellSize_;
-    int hudY = boardY_ + gridH_ * cellSize_ + 18;
+    int hudY = boardY_ + gridH_ * cellSize_ + 20;
 
     std::string scoreText = "SCORE: " + std::to_string(score_);
     std::string highText = "HIGH: " + std::to_string(highScore_);
     std::string levelText = "LEVEL: " + std::to_string(getLevel());
 
-    Renderer::drawTextShadow(scoreText.c_str(), static_cast<float>(boardX_), static_cast<float>(hudY), 20, ColorPalette::accent(), ColorPalette::bgDark());
-    Renderer::drawTextShadow(highText.c_str(), static_cast<float>(boardX_ + bw / 2 - MeasureText(highText.c_str(), 20) / 2), static_cast<float>(hudY), 20, ColorPalette::gold(), ColorPalette::bgDark());
-    Renderer::drawTextShadow(levelText.c_str(), static_cast<float>(boardX_ + bw - MeasureText(levelText.c_str(), 20)), static_cast<float>(hudY), 20, ColorPalette::gray(), ColorPalette::bgDark());
+    Renderer::drawTextShadow(window_, scoreText, static_cast<float>(boardX_), static_cast<float>(hudY), 20, Colors::accent(), Colors::bg());
+    Renderer::drawTextShadow(window_, highText, static_cast<float>(boardX_ + bw / 2 - 60), static_cast<float>(hudY), 20, Colors::gold(), Colors::bg());
+    Renderer::drawTextShadow(window_, levelText, static_cast<float>(boardX_ + bw - 90), static_cast<float>(hudY), 20, Colors::textDim(), Colors::bg());
 
     std::string controls = "P: Pause  |  Q: Menu  |  Arrows/WASD: Move";
-    Renderer::drawTextCentered(controls.c_str(), static_cast<float>(Settings::kScreenWidth / 2), static_cast<float>(Settings::kScreenHeight - 20), 13, ColorPalette::dimGray());
+    Renderer::drawTextCentered(window_, controls, Config::kScreenWidth / 2.f, Config::kScreenHeight - 20, 13, Colors::textMuted());
 }
 
 void Game::drawMenu() {
-    float cx = static_cast<float>(Settings::kScreenWidth / 2);
-    float cy = static_cast<float>(Settings::kScreenHeight / 2);
-    menuPulse_ += GetFrameTime() * 3;
+    float cx = Config::kScreenWidth / 2.f;
+    float cy = Config::kScreenHeight / 2.f;
+    float glow = 0.5f + 0.5f * std::sin(pulseTimer_ * 2);
 
-    float glow = 0.5f + 0.5f * sinf(menuPulse_ * 0.5f);
-
-    Renderer::drawTextShadow(Settings::kGameTitle, cx - MeasureText(Settings::kGameTitle, 72) / 2, cy - 130, 72, ColorPalette::accentBright(), ColorPalette::bgDark(), 3);
+    Renderer::drawTextShadow(window_, Config::kTitle, cx - 200, cy - 140, 72, Colors::accentBright(), Colors::bg(), 3);
 
     std::string sub = "A Modern Snake Experience";
-    Renderer::drawTextCentered(sub.c_str(), cx, cy - 65, 18, ColorPalette::gray());
+    Renderer::drawTextCentered(window_, sub, cx, cy - 70, 18, Colors::textDim());
 
     std::string startText = "PRESS ENTER OR SPACE TO START";
-    unsigned char alpha = static_cast<unsigned char>(140 + 115 * glow);
-    Renderer::drawTextCentered(startText.c_str(), cx, cy + 10, 22, Color{220, 220, 230, alpha});
+    sf::Color startCol(220, 220, 230, static_cast<sf::Uint8>(140 + 115 * glow));
+    Renderer::drawTextCentered(window_, startText, cx, cy + 10, 22, startCol);
 
     std::string hsText = "HIGH SCORE: " + std::to_string(highScore_);
-    Renderer::drawTextCentered(hsText.c_str(), cx, cy + 60, 18, ColorPalette::gold());
+    Renderer::drawTextCentered(window_, hsText, cx, cy + 60, 18, Colors::gold());
 
     std::string hint = "Press H for High Scores";
-    Renderer::drawTextCentered(hint.c_str(), cx, cy + 100, 14, ColorPalette::dimGray());
+    Renderer::drawTextCentered(window_, hint, cx, cy + 100, 14, Colors::textMuted());
 
     std::string controls[] = {
         "Arrow Keys / WASD  -  Move",
@@ -305,66 +400,67 @@ void Game::drawMenu() {
     };
 
     for (int i = 0; i < 3; ++i) {
-        Renderer::drawTextCentered(controls[i].c_str(), cx, cy + 150 + i * 28, 16, ColorPalette::dimGray());
+        Renderer::drawTextCentered(window_, controls[i], cx, cy + 155 + i * 28, 16, Colors::textMuted());
     }
 
-    Renderer::drawTextCentered(Settings::kVersion, cx, static_cast<float>(Settings::kScreenHeight - 25), 12, ColorPalette::dimGray());
+    Renderer::drawTextCentered(window_, Config::kVersion, cx, Config::kScreenHeight - 25, 12, Colors::textMuted());
 }
 
 void Game::drawPaused() {
-    DrawRectangle(0, 0, Settings::kScreenWidth, Settings::kScreenHeight, ColorPalette::overlay());
+    sf::RectangleShape overlay(sf::Vector2f(Config::kScreenWidth, Config::kScreenHeight));
+    overlay.setFillColor(Colors::overlay());
+    window_.draw(overlay);
 
-    float cx = static_cast<float>(Settings::kScreenWidth / 2);
-    float cy = static_cast<float>(Settings::kScreenHeight / 2);
+    float cx = Config::kScreenWidth / 2.f;
+    float cy = Config::kScreenHeight / 2.f;
 
-    std::string text = "PAUSED";
-    Renderer::drawTextShadow(text.c_str(), cx - MeasureText(text.c_str(), 56) / 2, cy - 40, 56, ColorPalette::accent(), ColorPalette::bgDark(), 3);
-
-    std::string sub = "Press P to Resume";
-    Renderer::drawTextCentered(sub.c_str(), cx, cy + 30, 20, ColorPalette::gray());
+    Renderer::drawTextShadow(window_, "PAUSED", cx - 120, cy - 50, 56, Colors::accent(), Colors::bg(), 3);
+    Renderer::drawTextCentered(window_, "Press P to Resume", cx, cy + 30, 20, Colors::textDim());
 }
 
 void Game::drawGameOver() {
-    DrawRectangle(0, 0, Settings::kScreenWidth, Settings::kScreenHeight, ColorPalette::overlay());
+    sf::RectangleShape overlay(sf::Vector2f(Config::kScreenWidth, Config::kScreenHeight));
+    overlay.setFillColor(Colors::overlay());
+    window_.draw(overlay);
 
-    float cx = static_cast<float>(Settings::kScreenWidth / 2);
-    float cy = static_cast<float>(Settings::kScreenHeight / 2);
+    float cx = Config::kScreenWidth / 2.f;
+    float cy = Config::kScreenHeight / 2.f;
 
-    std::string text = "GAME OVER";
-    Renderer::drawTextShadow(text.c_str(), cx - MeasureText(text.c_str(), 56) / 2, cy - 100, 56, ColorPalette::danger(), ColorPalette::bgDark(), 3);
+    Renderer::drawTextShadow(window_, "GAME OVER", cx - 160, cy - 110, 56, Colors::danger(), Colors::bg(), 3);
 
     std::string scoreText = "SCORE: " + std::to_string(score_);
-    Renderer::drawTextCentered(scoreText.c_str(), cx, cy - 30, 32, ColorPalette::white());
+    Renderer::drawTextCentered(window_, scoreText, cx, cy - 30, 32, Colors::text());
 
     std::string hsText = "BEST: " + std::to_string(highScore_);
-    Renderer::drawTextCentered(hsText.c_str(), cx, cy + 10, 22, ColorPalette::gold());
+    Renderer::drawTextCentered(window_, hsText, cx, cy + 15, 22, Colors::gold());
 
     if (isNewHighScore_) {
         std::string newHs = "NEW HIGH SCORE!";
-        float pulse = 0.7f + 0.3f * sinf(frameCounter_ * 0.15f);
-        Renderer::drawTextCentered(newHs.c_str(), cx, cy + 50, 18, Color{255, 200, 50, static_cast<unsigned char>(255 * pulse)});
+        float pulse = 0.7f + 0.3f * std::sin(pulseTimer_ * 4);
+        sf::Color col(255, 200, 50, static_cast<sf::Uint8>(255 * pulse));
+        Renderer::drawTextCentered(window_, newHs, cx, cy + 55, 18, col);
     }
 
-    std::string restart = "R - Play Again";
-    std::string menu = "Q - Main Menu";
-    Renderer::drawTextCentered(restart.c_str(), cx, cy + 100, 20, ColorPalette::accent());
-    Renderer::drawTextCentered(menu.c_str(), cx, cy + 135, 18, ColorPalette::gray());
+    Renderer::drawTextCentered(window_, "R - Play Again", cx, cy + 105, 20, Colors::accent());
+    Renderer::drawTextCentered(window_, "Q - Main Menu", cx, cy + 140, 18, Colors::textDim());
 }
 
 void Game::drawHighScores() {
-    float cx = static_cast<float>(Settings::kScreenWidth / 2);
-    float cy = static_cast<float>(Settings::kScreenHeight / 2);
+    float cx = Config::kScreenWidth / 2.f;
+    float cy = Config::kScreenHeight / 2.f;
 
-    std::string title = "HIGH SCORES";
-    Renderer::drawTextShadow(title.c_str(), cx - MeasureText(title.c_str(), 48) / 2, cy - 180, 48, ColorPalette::gold(), ColorPalette::bgDark(), 3);
+    Renderer::drawTextShadow(window_, "HIGH SCORES", cx - 160, cy - 190, 48, Colors::gold(), Colors::bg(), 3);
 
     const auto& scores = scoreManager_.getScores();
-    int startY = cy - 120;
+    int startY = cy - 130;
 
     for (int i = 0; i < 10; ++i) {
-        int y = startY + i * 30;
-        Color rowCol = (i % 2 == 0) ? Color{30, 30, 50, 100} : Color{20, 20, 35, 100};
-        DrawRectangle(cx - 200, y - 12, 400, 26, rowCol);
+        int y = startY + i * 32;
+        sf::Color rowCol = (i % 2 == 0) ? sf::Color(30, 30, 50, 100) : sf::Color(20, 20, 35, 100);
+        sf::RectangleShape row(sf::Vector2f(420, 28));
+        row.setPosition(cx - 210, y - 14);
+        row.setFillColor(rowCol);
+        window_.draw(row);
 
         std::string rank = "#" + std::to_string(i + 1);
         std::string entryText;
@@ -374,13 +470,12 @@ void Game::drawHighScores() {
             entryText = "---";
         }
 
-        Color rankCol = (i < 3) ? ColorPalette::gold() : ColorPalette::gray();
-        Renderer::drawTextShadow(rank.c_str(), cx - 180, static_cast<float>(y), 16, rankCol, ColorPalette::bgDark());
-        Renderer::drawTextShadow(entryText.c_str(), cx - 100, static_cast<float>(y), 16, ColorPalette::white(), ColorPalette::bgDark());
+        sf::Color rankCol = (i < 3) ? Colors::gold() : Colors::textDim();
+        Renderer::drawTextShadow(window_, rank, cx - 190, static_cast<float>(y), 16, rankCol, Colors::bg());
+        Renderer::drawTextShadow(window_, entryText, cx - 110, static_cast<float>(y), 16, Colors::text(), Colors::bg());
     }
 
-    std::string back = "Press ESC or ENTER to go back";
-    Renderer::drawTextCentered(back.c_str(), cx, cy + 200, 16, ColorPalette::dimGray());
+    Renderer::drawTextCentered(window_, "Press ESC or ENTER to go back", cx, cy + 210, 16, Colors::textMuted());
 }
 
 void Game::resetGame() {
@@ -388,33 +483,33 @@ void Game::resetGame() {
     food_.spawn(gridW_, gridH_, snake_.getBody());
     score_ = 0;
     isNewHighScore_ = false;
-    state_ = GameState::Playing;
+    state_ = State::Playing;
     moveTimer_ = 0;
     particles_.clear();
 }
 
-int Game::getSpeed() const {
-    int speed = Settings::kInitialSpeed + (score_ / Settings::kScorePerFood);
-    return std::min(speed, Settings::kMaxSpeed);
+float Game::getInterval() const {
+    float interval = Config::kInitialInterval - (score_ / Config::kScorePerFood) * 0.008f;
+    return std::max(interval, Config::kMinInterval);
 }
 
 int Game::getLevel() const {
-    return (score_ / Settings::kScorePerFood) / 5 + 1;
+    return (score_ / Config::kScorePerFood) / 5 + 1;
 }
 
-void Game::spawnEatEffect(Vec2 pos) {
-    particles_.emitBurst(pos, 20, ColorPalette::food(), 120, 0.7f, 5);
-    particles_.emit(pos, 8, ColorPalette::accentBright(), 80, 0.5f, 3);
+void Game::spawnEatEffect(sf::Vector2f pos) {
+    particles_.emitBurst(pos, 20, Colors::food(), 120, 0.7f, 5);
+    particles_.emit(pos, 8, Colors::accentBright(), 80, 0.5f, 3);
 }
 
 void Game::spawnDeathEffect() {
     const auto& body = snake_.getBody();
     for (int i = 0; i < static_cast<int>(body.size()); ++i) {
-        Vec2 p = Vec2{
+        sf::Vector2f p(
             static_cast<float>(boardX_ + body[i].x * cellSize_ + cellSize_ / 2),
             static_cast<float>(boardY_ + body[i].y * cellSize_ + cellSize_ / 2)
-        };
-        particles_.emitBurst(p, 5, ColorPalette::danger(), 60, 0.8f, 4);
+        );
+        particles_.emitBurst(p, 5, Colors::danger(), 60, 0.8f, 4);
     }
 }
 

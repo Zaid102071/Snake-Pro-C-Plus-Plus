@@ -11,7 +11,7 @@ ScoreManager::ScoreManager() {
 }
 
 std::string ScoreManager::getFilePath() const {
-    std::filesystem::path path = std::filesystem::current_path() / Settings::kHighScoreFile;
+    std::filesystem::path path = std::filesystem::current_path() / "highscores.dat";
     return path.string();
 }
 

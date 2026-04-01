@@ -26,10 +26,15 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev
+          sudo apt-get install -y build-essential libx11-dev libxrandr-dev libxcursor-dev libudev-dev libopenal-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libdrm-dev libgbm-dev
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install pkg-config
 
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DSFML_BUILD_WINDOW=ON -DSFML_BUILD_GRAPHICS=ON -DSFML_BUILD_SYSTEM=ON
 
       - name: Build
         run: cmake --build build --config ${{ matrix.config }} --parallel

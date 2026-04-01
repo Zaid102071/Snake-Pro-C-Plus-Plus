@@ -1,21 +1,27 @@
 # Snake Pro
 
-A modern, beautifully-rendered Snake game built with C++17 and Raylib.
+A modern, beautifully-rendered Snake game built with **pure C++17** and **SFML**.
 
 ## Features
 
+- **Pure C++17** - Native C++ library (SFML), no C wrappers
 - **Stunning Visuals** - Gradient backgrounds, glowing borders, animated food with pulsing glow
 - **Particle Effects** - Burst particles when eating food, death explosion on game over
 - **Screen Shake** - Dynamic screen shake on food collection and death
 - **Smooth Animations** - Pulsing snake head, gradient body that fades toward tail
 - **High Score System** - Persistent top 10 scores with dates
-- **Responsive Controls** - Arrow keys and WASD support
+- **Responsive Controls** - Arrow keys and WASD support with direction locking
 - **Cross-Platform** - Windows, Linux, macOS
-- **Professional Architecture** - Clean separation of engine, game, and UI layers
+- **Professional Architecture** - Clean separation of core, engine, and game layers
 
-## Screenshots
+## Tech Stack
 
-The game features a dark theme with neon green accents, glowing golden food, and smooth particle effects.
+| Component | Technology |
+|-----------|------------|
+| Language | C++17 |
+| Graphics | SFML 3.0 (native C++) |
+| Build | CMake 3.20+ with FetchContent |
+| CI/CD | GitHub Actions (multi-platform) |
 
 ## Building
 
@@ -23,7 +29,7 @@ The game features a dark theme with neon green accents, glowing golden food, and
 
 - CMake 3.20+
 - C++17 compatible compiler
-- Raylib (auto-downloaded via FetchContent)
+- SFML 3.0 (auto-downloaded via FetchContent)
 
 ### Build Commands
 
@@ -40,7 +46,7 @@ cmake --build . --parallel
 | Arrow Keys / WASD | Move the snake |
 | P / ESC | Pause / Resume |
 | R | Restart (Game Over screen) |
-| Q | Quit to menu |
+| Q / ESC | Quit to menu |
 | H | High Scores (Menu screen) |
 | ENTER / SPACE | Start game |
 
@@ -49,24 +55,24 @@ cmake --build . --parallel
 ```
 Snake-Pro-C-Plus-Plus/
 ├── include/
-│   ├── core/           # Core types and settings
-│   │   ├── Settings.h
-│   │   ├── Types.h
-│   │   └── Math.h
+│   ├── core/           # Core types and configuration
+│   │   ├── Config.h    # Game constants
+│   │   ├── Types.h     # Enums and state
+│   │   └── Math.h      # Vector utilities
 │   ├── engine/         # Rendering engine
-│   │   ├── ColorPalette.h
-│   │   ├── Renderer.h
-│   │   └── ParticleSystem.h
+│   │   ├── Colors.h    # Centralized color palette
+│   │   ├── Renderer.h  # Text and shape helpers
+│   │   └── ParticleSystem.h  # Particle effects
 │   └── game/           # Game logic
-│       ├── Snake.h
-│       ├── ScoreManager.h
-│       └── Game.h
+│       ├── Game.h      # Main game class
+│       ├── Snake.h     # Snake and Food classes
+│       └── ScoreManager.h  # High score persistence
 ├── src/
 │   ├── main.cpp
 │   ├── engine/
 │   └── game/
 ├── CMakeLists.txt
-└── .github/workflows/
+└── .github/workflows/build.yml
 ```
 
 ## Build Status
