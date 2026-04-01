@@ -81,7 +81,7 @@ void Game::update() {
     float frameTime = GetFrameTime();
     moveTimer += frameTime;
 
-    float moveInterval = 1.0f / getSpeed();
+    float moveInterval = 1.0f / static_cast<float>(getSpeed());
 
     if (moveTimer >= moveInterval) {
         moveTimer = 0;
@@ -166,21 +166,34 @@ void Game::drawGrid() {
     }
 }
 
+static Rectangle makeRect(float x, float y, float w, float h) {
+    Rectangle r;
+    r.x = x; r.y = y; r.width = w; r.height = h;
+    return r;
+}
+
+static Color makeColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+    Color c;
+    c.r = r; c.g = g; c.b = b; c.a = a;
+    return c;
+}
+
 void Game::drawSnake() {
     const auto& body = snake_.getBody();
     for (int i = static_cast<int>(body.size()) - 1; i >= 0; --i) {
-        int px = GameConfig::kBoardOffsetX + body[i].x * cellSize_;
-        int py = GameConfig::kBoardOffsetY + body[i].y * cellSize_;
+        float px = static_cast<float>(GameConfig::kBoardOffsetX + body[i].x * cellSize_);
+        float py = static_cast<float>(GameConfig::kBoardOffsetY + body[i].y * cellSize_);
+        float cs = static_cast<float>(cellSize_);
 
         if (i == 0) {
-            Color headColor = Color{0, 255, 150, 255};
-            DrawRectangleRounded(Rectangle{px + 1, py + 1, cellSize_ - 2, cellSize_ - 2}, 0.3f, 8, headColor);
-            DrawRectangleRounded(Rectangle{px + 3, py + 3, cellSize_ - 6, cellSize_ - 6}, 0.3f, 8, Color{100, 255, 200, 255});
+            Color headColor = makeColor(0, 255, 150, 255);
+            DrawRectangleRounded(makeRect(px + 1, py + 1, cs - 2, cs - 2), 0.3f, 8, headColor);
+            DrawRectangleRounded(makeRect(px + 3, py + 3, cs - 6, cs - 6), 0.3f, 8, makeColor(100, 255, 200, 255));
 
-            float eyeSize = cellSize_ / 6;
-            float eyeOffset = cellSize_ / 4;
-            float cx = px + cellSize_ / 2;
-            float cy = py + cellSize_ / 2;
+            float eyeSize = cs / 6.0f;
+            float eyeOffset = cs / 4.0f;
+            float cx = px + cs / 2.0f;
+            float cy = py + cs / 2.0f;
             float ex1 = cx, ey1 = cy, ex2 = cx, ey2 = cy;
 
             switch (snake_.getDirection()) {
@@ -192,53 +205,55 @@ void Game::drawSnake() {
             }
             DrawCircle(ex1, ey1, eyeSize, WHITE);
             DrawCircle(ex2, ey2, eyeSize, WHITE);
-            DrawCircle(ex1, ey1, eyeSize * 0.5, BLACK);
-            DrawCircle(ex2, ey2, eyeSize * 0.5, BLACK);
+            DrawCircle(ex1, ey1, eyeSize * 0.5f, BLACK);
+            DrawCircle(ex2, ey2, eyeSize * 0.5f, BLACK);
         } else {
-            float t = 1.0f - static_cast<float>(i) / body.size();
-            int g = static_cast<int>(180 + 75 * t);
-            int b = static_cast<int>(80 + 70 * t);
-            Color bodyColor = Color{0, static_cast<unsigned char>(g), static_cast<unsigned char>(b), 255};
-            DrawRectangleRounded(Rectangle{px + 2, py + 2, cellSize_ - 4, cellSize_ - 4}, 0.25f, 6, bodyColor);
+            float t = 1.0f - static_cast<float>(i) / static_cast<float>(body.size());
+            unsigned char g = static_cast<unsigned char>(180 + 75 * t);
+            unsigned char b = static_cast<unsigned char>(80 + 70 * t);
+            Color bodyColor = makeColor(0, g, b, 255);
+            DrawRectangleRounded(makeRect(px + 2, py + 2, cs - 4, cs - 4), 0.25f, 6, bodyColor);
         }
     }
 }
 
 void Game::drawFood() {
-    int px = GameConfig::kBoardOffsetX + food_.getPosition().x * cellSize_;
-    int py = GameConfig::kBoardOffsetY + food_.getPosition().y * cellSize_;
-    float cx = px + cellSize_ / 2;
-    float cy = py + cellSize_ / 2;
+    float px = static_cast<float>(GameConfig::kBoardOffsetX + food_.getPosition().x * cellSize_);
+    float py = static_cast<float>(GameConfig::kBoardOffsetY + food_.getPosition().y * cellSize_);
+    float cs = static_cast<float>(cellSize_);
+    float cx = px + cs / 2.0f;
+    float cy = py + cs / 2.0f;
     float pulse = 1.0f + 0.15f * sinf(frameCounter_ * 0.15f);
-    float radius = (cellSize_ / 2 - 3) * pulse;
+    float radius = (cs / 2.0f - 3.0f) * pulse;
 
-    DrawCircle(cx, cy, radius + 3, Color{255, 200, 0, 80});
-    DrawCircle(cx, cy, radius, Color{255, 220, 50, 255});
-    DrawCircle(cx, cy, radius * 0.5f, Color{255, 255, 180, 255});
+    DrawCircle(cx, cy, radius + 3.0f, makeColor(255, 200, 0, 80));
+    DrawCircle(cx, cy, radius, makeColor(255, 220, 50, 255));
+    DrawCircle(cx, cy, radius * 0.5f, makeColor(255, 255, 180, 255));
 }
 
 void Game::drawParticles() {
     for (const auto& p : particles_) {
         float alpha = p.life / p.maxLife;
-        DrawCircle(p.x, p.y, 3 * alpha, Color{p.r, p.g, p.b, static_cast<unsigned char>(alpha * 255)});
+        DrawCircle(p.x, p.y, 3.0f * alpha, makeColor(p.color.r, p.color.g, p.color.b, static_cast<unsigned char>(alpha * 255.0f)));
     }
 }
 
 void Game::spawnParticles(int gridX, int gridY) {
-    float cx = GameConfig::kBoardOffsetX + gridX * cellSize_ + cellSize_ / 2;
-    float cy = GameConfig::kBoardOffsetY + gridY * cellSize_ + cellSize_ / 2;
+    float cx = static_cast<float>(GameConfig::kBoardOffsetX + gridX * cellSize_ + cellSize_ / 2);
+    float cy = static_cast<float>(GameConfig::kBoardOffsetY + gridY * cellSize_ + cellSize_ / 2);
 
     for (int i = 0; i < 15; ++i) {
         Particle p;
         p.x = cx;
         p.y = cy;
-        float angle = static_cast<float>(i) / 15 * 3.14159f * 2;
-        float speed = 80 + static_cast<float>(rand() % 60);
+        float angle = static_cast<float>(i) / 15.0f * 3.14159f * 2.0f;
+        float speed = 80.0f + static_cast<float>(rand() % 60);
         p.vx = cosf(angle) * speed;
         p.vy = sinf(angle) * speed;
-        p.life = 0.5f + static_cast<float>(rand() % 50) / 100;
+        p.life = 0.5f + static_cast<float>(rand() % 50) / 100.0f;
         p.maxLife = p.life;
-        p.color = Color{255, 200 + rand() % 55, 50, 255};
+        unsigned char rg = static_cast<unsigned char>(200 + rand() % 55);
+        p.color = makeColor(255, rg, 50, 255);
         particles_.push_back(p);
     }
 }
@@ -251,13 +266,13 @@ void Game::drawHUD() {
     std::string highText = "HIGH: " + std::to_string(scoreManager_.getHighScore());
     std::string levelText = "LEVEL: " + std::to_string(getLevel());
 
-    DrawText(scoreText.c_str(), GameConfig::kBoardOffsetX, hudY, 22, Color{0, 200, 150, 255});
-    DrawText(highText.c_str(), GameConfig::kBoardOffsetX + boardW / 2 - MeasureText(highText.c_str(), 22) / 2, hudY, 22, Color{200, 200, 200, 255});
-    DrawText(levelText.c_str(), GameConfig::kBoardOffsetX + boardW - MeasureText(levelText.c_str(), 22), hudY, 22, Color{255, 200, 50, 255});
+    DrawText(scoreText.c_str(), GameConfig::kBoardOffsetX, hudY, 22, makeColor(0, 200, 150, 255));
+    DrawText(highText.c_str(), GameConfig::kBoardOffsetX + boardW / 2 - MeasureText(highText.c_str(), 22) / 2, hudY, 22, makeColor(200, 200, 200, 255));
+    DrawText(levelText.c_str(), GameConfig::kBoardOffsetX + boardW - MeasureText(levelText.c_str(), 22), hudY, 22, makeColor(255, 200, 50, 255));
 
     std::string controls = "P: Pause | Q: Quit | Arrows/WASD: Move";
     DrawText(controls.c_str(), GameConfig::kBoardOffsetX + boardW / 2 - MeasureText(controls.c_str(), 14) / 2,
-             GameConfig::kScreenHeight - 25, 14, Color{100, 100, 120, 255});
+             GameConfig::kScreenHeight - 25, 14, makeColor(100, 100, 120, 255));
 }
 
 void Game::drawMenu() {
@@ -266,10 +281,11 @@ void Game::drawMenu() {
 
     float glow = 0.5f + 0.5f * sinf(frameCounter_ * 0.05f);
 
-    DrawText(GameConfig::kGameTitle, cx - MeasureText(GameConfig::kGameTitle, 60) / 2, cy - 100, 60, Color{0, 200, 150, 255});
+    DrawText(GameConfig::kGameTitle, cx - MeasureText(GameConfig::kGameTitle, 60) / 2, cy - 100, 60, makeColor(0, 200, 150, 255));
 
     std::string startText = "PRESS ENTER OR SPACE TO START";
-    DrawText(startText.c_str(), cx - MeasureText(startText.c_str(), 24) / 2, cy, 24, Color{200, 200, 200, static_cast<unsigned char>(150 + 105 * glow)});
+    unsigned char alpha = static_cast<unsigned char>(150 + 105 * glow);
+    DrawText(startText.c_str(), cx - MeasureText(startText.c_str(), 24) / 2, cy, 24, makeColor(200, 200, 200, alpha));
 
     std::string controls[] = {
         "Arrow Keys / WASD - Move",
@@ -278,32 +294,32 @@ void Game::drawMenu() {
     };
 
     for (int i = 0; i < 3; ++i) {
-        DrawText(controls[i].c_str(), cx - MeasureText(controls[i].c_str(), 18) / 2, cy + 60 + i * 30, 18, Color{150, 150, 170, 255});
+        DrawText(controls[i].c_str(), cx - MeasureText(controls[i].c_str(), 18) / 2, cy + 60 + i * 30, 18, makeColor(150, 150, 170, 255));
     }
 
     int highScore = scoreManager_.getHighScore();
     std::string hsText = "HIGH SCORE: " + std::to_string(highScore);
-    DrawText(hsText.c_str(), cx - MeasureText(hsText.c_str(), 20) / 2, cy + 170, 20, Color{255, 200, 50, 255});
+    DrawText(hsText.c_str(), cx - MeasureText(hsText.c_str(), 20) / 2, cy + 170, 20, makeColor(255, 200, 50, 255));
 }
 
 void Game::drawPaused() {
-    DrawRectangle(0, 0, GameConfig::kScreenWidth, GameConfig::kScreenHeight, Color{0, 0, 0, 150});
+    DrawRectangle(0, 0, GameConfig::kScreenWidth, GameConfig::kScreenHeight, makeColor(0, 0, 0, 150));
 
     std::string text = "PAUSED";
     DrawText(text.c_str(), GameConfig::kScreenWidth / 2 - MeasureText(text.c_str(), 48) / 2,
-             GameConfig::kScreenHeight / 2 - 24, 48, Color{0, 200, 150, 255});
+             GameConfig::kScreenHeight / 2 - 24, 48, makeColor(0, 200, 150, 255));
 
     std::string sub = "Press P to resume";
     DrawText(sub.c_str(), GameConfig::kScreenWidth / 2 - MeasureText(sub.c_str(), 20) / 2,
-             GameConfig::kScreenHeight / 2 + 30, 20, Color{180, 180, 180, 255});
+             GameConfig::kScreenHeight / 2 + 30, 20, makeColor(180, 180, 180, 255));
 }
 
 void Game::drawGameOver() {
-    DrawRectangle(0, 0, GameConfig::kScreenWidth, GameConfig::kScreenHeight, Color{0, 0, 0, 180});
+    DrawRectangle(0, 0, GameConfig::kScreenWidth, GameConfig::kScreenHeight, makeColor(0, 0, 0, 180));
 
     std::string text = "GAME OVER";
     DrawText(text.c_str(), GameConfig::kScreenWidth / 2 - MeasureText(text.c_str(), 48) / 2,
-             GameConfig::kScreenHeight / 2 - 80, 48, Color{255, 80, 80, 255});
+             GameConfig::kScreenHeight / 2 - 80, 48, makeColor(255, 80, 80, 255));
 
     std::string scoreText = "SCORE: " + std::to_string(score_);
     DrawText(scoreText.c_str(), GameConfig::kScreenWidth / 2 - MeasureText(scoreText.c_str(), 32) / 2,
@@ -311,14 +327,14 @@ void Game::drawGameOver() {
 
     std::string hsText = "HIGH SCORE: " + std::to_string(scoreManager_.getHighScore());
     DrawText(hsText.c_str(), GameConfig::kScreenWidth / 2 - MeasureText(hsText.c_str(), 24) / 2,
-             GameConfig::kScreenHeight / 2 + 20, 24, Color{255, 200, 50, 255});
+             GameConfig::kScreenHeight / 2 + 20, 24, makeColor(255, 200, 50, 255));
 
     std::string restart = "R - Restart";
     std::string quit = "Q - Quit";
     DrawText(restart.c_str(), GameConfig::kScreenWidth / 2 - MeasureText(restart.c_str(), 22) / 2,
-             GameConfig::kScreenHeight / 2 + 70, 22, Color{0, 200, 150, 255});
+             GameConfig::kScreenHeight / 2 + 70, 22, makeColor(0, 200, 150, 255));
     DrawText(quit.c_str(), GameConfig::kScreenWidth / 2 - MeasureText(quit.c_str(), 22) / 2,
-             GameConfig::kScreenHeight / 2 + 100, 22, Color{200, 200, 200, 255});
+             GameConfig::kScreenHeight / 2 + 100, 22, makeColor(200, 200, 200, 255));
 }
 
 void Game::resetGame() {
