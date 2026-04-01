@@ -17,25 +17,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         config: [Release, Debug]
-        include:
-          - os: ubuntu-latest
-            cmake_generator: "Unix Makefiles"
-            artifact_name: snake-pro-linux
-          - os: windows-latest
-            cmake_generator: "Visual Studio 17 2022"
-            artifact_name: snake-pro-windows
-          - os: macos-latest
-            cmake_generator: "Unix Makefiles"
-            artifact_name: snake-pro-macos
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v2
-        with:
-          cmake-version: '3.28.x'
       
       - name: Install dependencies (Ubuntu)
         if: runner.os == 'Linux'
@@ -44,41 +29,23 @@ jobs:
           sudo apt-get install -y build-essential
       
       - name: Configure CMake
-        run: >
-          cmake -S . -B build
-          -G "${{ matrix.cmake_generator }}"
-          -DCMAKE_BUILD_TYPE=${{ matrix.config }}
-          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
       
       - name: Build
         run: cmake --build build --config ${{ matrix.config }} --parallel
       
-      - name: Install
-        run: cmake --install build --config ${{ matrix.config }}
-      
-      - name: Upload artifact
+      - name: Upload artifact (Unix)
+        if: runner.os != 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}-${{ matrix.config }}
-          path: install/
+          name: snake-pro-${{ runner.os }}-${{ matrix.config }}
+          path: build/snake-pro
           retention-days: 30
-  
-  release:
-    name: Create Release
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
       
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
         with:
-          files: |
-            snake-pro-linux-Release/**
-            snake-pro-windows-Release/**
-            snake-pro-macos-Release/**
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: snake-pro-${{ runner.os }}-${{ matrix.config }}
+          path: build/${{ matrix.config }}/snake-pro.exe
+          retention-days: 30
