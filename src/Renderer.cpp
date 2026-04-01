@@ -1,4 +1,5 @@
 #include "game/Renderer.h"
+#include "game/Config.h"
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
