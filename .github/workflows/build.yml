@@ -27,9 +27,15 @@ jobs:
       - name: Build
         run: cmake --build build --config ${{ matrix.config }} --parallel
 
+      - name: Copy executable
+        run: |
+          mkdir -p output
+          copy build\snake-pro.exe output\snake-pro-${{ matrix.config }}.exe
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: snake-pro-windows-${{ matrix.config }}
-          path: build/snake-pro.exe
-          retention-days: 30
+          name: snake-pro-${{ matrix.config }}
+          path: output/snake-pro-${{ matrix.config }}.exe
+          retention-days: 90
+          compression-level: 0
