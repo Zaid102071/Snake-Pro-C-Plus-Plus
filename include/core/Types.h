@@ -4,8 +4,8 @@ namespace snakepro {
 
 enum class Direction { Up, Down, Left, Right, None };
 
-inline Direction opposite(Direction dir) {
-    switch (dir) {
+inline Direction opposite(Direction d) {
+    switch (d) {
         case Direction::Up:    return Direction::Down;
         case Direction::Down:  return Direction::Up;
         case Direction::Left:  return Direction::Right;
@@ -13,5 +13,7 @@ inline Direction opposite(Direction dir) {
         default:               return Direction::None;
     }
 }
+
+enum class GameState { Menu, Playing, Paused, GameOver, HighScores, Settings };
 
 }

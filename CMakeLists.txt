@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)
-    add_compile_options(/W4 /permissive-)
+    add_compile_options(/W4 /permissive- /utf-8)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -25,16 +25,15 @@ set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(raylib)
 
-set(SOURCES
-    src/main.cpp
-    src/Game.cpp
-    src/Snake.cpp
-    src/ScoreManager.cpp
+file(GLOB_RECURSE SOURCES
+    "src/*.cpp"
 )
 
 add_executable(snake-pro ${SOURCES})
 
-target_include_directories(snake-pro PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(snake-pro PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 target_link_libraries(snake-pro PRIVATE raylib)
 

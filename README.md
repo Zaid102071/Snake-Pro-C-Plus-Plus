@@ -1,17 +1,21 @@
 # Snake Pro
 
-A modern graphical Snake game built with C++17 and Raylib.
+A modern, beautifully-rendered Snake game built with C++17 and Raylib.
 
 ## Features
 
-- Smooth 60 FPS graphical rendering
-- Particle effects when eating food
-- Pulsing food animation with glow
-- Gradient snake body with animated eyes
-- Grid-based board with glowing border
-- Progressive difficulty system
-- High score persistence
-- Cross-platform (Windows, Linux, macOS)
+- **Stunning Visuals** - Gradient backgrounds, glowing borders, animated food with pulsing glow
+- **Particle Effects** - Burst particles when eating food, death explosion on game over
+- **Screen Shake** - Dynamic screen shake on food collection and death
+- **Smooth Animations** - Pulsing snake head, gradient body that fades toward tail
+- **High Score System** - Persistent top 10 scores with dates
+- **Responsive Controls** - Arrow keys and WASD support
+- **Cross-Platform** - Windows, Linux, macOS
+- **Professional Architecture** - Clean separation of engine, game, and UI layers
+
+## Screenshots
+
+The game features a dark theme with neon green accents, glowing golden food, and smooth particle effects.
 
 ## Building
 
@@ -33,10 +37,37 @@ cmake --build . --parallel
 
 | Key | Action |
 |-----|--------|
-| Arrow Keys / WASD | Move |
-| P / ESC | Pause |
-| R | Restart (Game Over) |
-| Q / ESC | Quit |
+| Arrow Keys / WASD | Move the snake |
+| P / ESC | Pause / Resume |
+| R | Restart (Game Over screen) |
+| Q | Quit to menu |
+| H | High Scores (Menu screen) |
+| ENTER / SPACE | Start game |
+
+## Project Structure
+
+```
+Snake-Pro-C-Plus-Plus/
+├── include/
+│   ├── core/           # Core types and settings
+│   │   ├── Settings.h
+│   │   ├── Types.h
+│   │   └── Math.h
+│   ├── engine/         # Rendering engine
+│   │   ├── ColorPalette.h
+│   │   ├── Renderer.h
+│   │   └── ParticleSystem.h
+│   └── game/           # Game logic
+│       ├── Snake.h
+│       ├── ScoreManager.h
+│       └── Game.h
+├── src/
+│   ├── main.cpp
+│   ├── engine/
+│   └── game/
+├── CMakeLists.txt
+└── .github/workflows/
+```
 
 ## Build Status
 

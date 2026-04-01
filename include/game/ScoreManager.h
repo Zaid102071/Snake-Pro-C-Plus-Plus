@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Config.h"
+#include "core/Settings.h"
 #include <string>
 #include <vector>
-#include <ctime>
 
 namespace snakepro {
 
 struct HighScoreEntry {
-    int score;
+    int score = 0;
     std::string date;
+    std::string name;
 };
 
 class ScoreManager {
