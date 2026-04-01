@@ -12,7 +12,7 @@ Game::Game()
     window_.setFramerateLimit(60);
 
     std::filesystem::path fontPath = std::filesystem::current_path() / "assets" / "font.ttf";
-    if (font_.openFromFile(fontPath.string())) {
+    if (font_.loadFromFile(fontPath.string())) {
         Renderer::setFont(font_);
     }
 
@@ -38,14 +38,15 @@ void Game::run() {
 
         handleInput();
         update();
-        frameTime_ += clock.restart().asSeconds();
+        float dt = clock.restart().asSeconds();
+        frameTime_ = dt;
         render();
     }
 }
 
 void Game::handleInput() {
     if (state_ == State::Menu) {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter) || sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Return) || sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
             state_ = State::Playing;
             sf::sleep(sf::milliseconds(200));
         } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
@@ -56,7 +57,7 @@ void Game::handleInput() {
     }
 
     if (state_ == State::HighScores) {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) || sf::Keyboard::isKeyPressed(sf::Keyboard::Enter) || sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) || sf::Keyboard::isKeyPressed(sf::Keyboard::Return) || sf::Keyboard::isKeyPressed(sf::Keyboard::H)) {
             state_ = State::Menu;
             sf::sleep(sf::milliseconds(200));
         }
@@ -267,13 +268,11 @@ void Game::drawSnake() {
             sf::RectangleShape head(sf::Vector2f(size, size));
             head.setPosition(px + offset, py + offset);
             head.setFillColor(Colors::snakeHead());
-            head.setRadius(cs * 0.15f);
             window_.draw(head);
 
             sf::RectangleShape inner(sf::Vector2f(size - 4, size - 4));
             inner.setPosition(px + offset + 2, py + offset + 2);
             inner.setFillColor(sf::Color(100, 255, 220, 180));
-            inner.setRadius(cs * 0.12f);
             window_.draw(inner);
 
             float eyeSize = cs / 6.5f;
@@ -320,7 +319,6 @@ void Game::drawSnake() {
             sf::RectangleShape seg(sf::Vector2f(cs - shrink * 2, cs - shrink * 2));
             seg.setPosition(px + shrink, py + shrink);
             seg.setFillColor(col);
-            seg.setRadius(cs * 0.12f);
             window_.draw(seg);
         }
     }
