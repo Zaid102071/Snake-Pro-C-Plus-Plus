@@ -1,14 +1,7 @@
-#include "game/Game.h"
-#include <iostream>
+#include "Game.h"
 
 int main() {
-    try {
-        snakepro::Game game;
-        game.run();
-    } catch (const std::exception& e) {
-        std::cerr << "Fatal error: " << e.what() << "\n";
-        return 1;
-    }
-    
+    snakepro::Game game;
+    game.run();
     return 0;
 }

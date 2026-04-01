@@ -1,6 +1,5 @@
 # Build artifacts
 build/
-install/
 cmake-build-*/
 
 # IDE
@@ -27,3 +26,6 @@ Thumbs.db
 
 # Game data
 highscores.dat
+
+# Dependencies
+_raylib/

@@ -1,13 +1,13 @@
-#include "game/Snake.h"
+#include "Snake.h"
 #include <algorithm>
 
 namespace snakepro {
 
 Snake::Snake(int startX, int startY)
     : direction_(Direction::Right), nextDirection_(Direction::Right) {
-    body_.emplace_back(startX, startY);
-    body_.emplace_back(startX - 1, startY);
-    body_.emplace_back(startX - 2, startY);
+    body_.emplace_back(Position{startX, startY});
+    body_.emplace_back(Position{startX - 1, startY});
+    body_.emplace_back(Position{startX - 2, startY});
 }
 
 void Snake::grow() {
@@ -22,10 +22,10 @@ void Snake::move() {
     Position newHead;
 
     switch (direction_) {
-        case Direction::Up:    newHead = {head.first, head.second - 1}; break;
-        case Direction::Down:  newHead = {head.first, head.second + 1}; break;
-        case Direction::Left:  newHead = {head.first - 1, head.second}; break;
-        case Direction::Right: newHead = {head.first + 1, head.second}; break;
+        case Direction::Up:    newHead = {head.x, head.y - 1}; break;
+        case Direction::Down:  newHead = {head.x, head.y + 1}; break;
+        case Direction::Left:  newHead = {head.x - 1, head.y}; break;
+        case Direction::Right: newHead = {head.x + 1, head.y}; break;
         default:               return;
     }
 
@@ -49,20 +49,20 @@ bool Snake::checkSelfCollision() const {
     return false;
 }
 
-bool Snake::checkWallCollision(int width, int height) const {
+bool Snake::checkWallCollision(int gridWidth, int gridHeight) const {
     Position head = getHead();
-    return head.first < 0 || head.first >= width ||
-           head.second < 0 || head.second >= height;
+    return head.x < 0 || head.x >= gridWidth ||
+           head.y < 0 || head.y >= gridHeight;
 }
 
-Food::Food() : position_(0, 0), rng_(std::random_device{}()) {}
+Food::Food() : position_{0, 0}, rng_(std::random_device{}()) {}
 
-void Food::spawn(int width, int height, const std::vector<Position>& snakeBody) {
-    std::uniform_int_distribution<int> distX(0, width - 1);
-    std::uniform_int_distribution<int> distY(0, height - 1);
+void Food::spawn(int gridWidth, int gridHeight, const std::vector<Position>& snakeBody) {
+    std::uniform_int_distribution<int> distX(0, gridWidth - 1);
+    std::uniform_int_distribution<int> distY(0, gridHeight - 1);
 
     do {
-        position_ = {distX(rng_), distY(rng_)};
+        position_ = Position{distX(rng_), distY(rng_)};
     } while (std::find(snakeBody.begin(), snakeBody.end(), position_) != snakeBody.end());
 }
 

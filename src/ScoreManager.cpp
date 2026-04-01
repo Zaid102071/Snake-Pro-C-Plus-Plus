@@ -1,7 +1,6 @@
-#include "game/ScoreManager.h"
+#include "ScoreManager.h"
 #include <fstream>
 #include <algorithm>
-#include <ctime>
 #include <filesystem>
 
 namespace snakepro {
@@ -11,21 +10,19 @@ ScoreManager::ScoreManager() {
 }
 
 std::string ScoreManager::getFilePath() const {
-    std::filesystem::path path = std::filesystem::current_path() / Config::kHighScoreFile;
+    std::filesystem::path path = std::filesystem::current_path() / GameConfig::kHighScoreFile;
     return path.string();
 }
 
 void ScoreManager::loadScores() {
     std::ifstream file(getFilePath(), std::ios::binary);
-    if (!file.is_open()) {
-        return;
-    }
+    if (!file.is_open()) return;
 
     int count;
     file.read(reinterpret_cast<char*>(&count), sizeof(count));
 
     scores_.clear();
-    for (int i = 0; i < count && i < Config::kHighScoreFileMax; ++i) {
+    for (int i = 0; i < count && i < 10; ++i) {
         HighScoreEntry entry;
         int dateLen;
         file.read(reinterpret_cast<char*>(&entry.score), sizeof(entry.score));
@@ -38,11 +35,9 @@ void ScoreManager::loadScores() {
 
 void ScoreManager::saveScores() const {
     std::ofstream file(getFilePath(), std::ios::binary);
-    if (!file.is_open()) {
-        return;
-    }
+    if (!file.is_open()) return;
 
-    int count = std::min(static_cast<int>(scores_.size()), Config::kHighScoreFileMax);
+    int count = std::min(static_cast<int>(scores_.size()), 10);
     file.write(reinterpret_cast<const char*>(&count), sizeof(count));
 
     for (int i = 0; i < count; ++i) {
@@ -69,8 +64,8 @@ void ScoreManager::addScore(int score) {
                   return a.score > b.score;
               });
 
-    if (scores_.size() > Config::kHighScoreFileMax) {
-        scores_.resize(Config::kHighScoreFileMax);
+    if (scores_.size() > 10) {
+        scores_.resize(10);
     }
 
     saveScores();

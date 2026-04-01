@@ -1,47 +1,42 @@
-# Snake Pro - C++ Terminal Game
+# Snake Pro
 
-A modern, cross-platform Snake game written in C++17.
+A modern graphical Snake game built with C++17 and Raylib.
 
-## Platform Support
+## Features
 
-| Platform | Status |
-|----------|--------|
-| Windows  | ✅     |
-| Linux    | ✅     |
-| macOS    | ✅     |
+- Smooth 60 FPS graphical rendering
+- Particle effects when eating food
+- Pulsing food animation with glow
+- Gradient snake body with animated eyes
+- Grid-based board with glowing border
+- Progressive difficulty system
+- High score persistence
+- Cross-platform (Windows, Linux, macOS)
 
-## Quick Start
+## Building
 
-### Windows
-```powershell
-mkdir build; cd build
-cmake .. -G "Visual Studio 17 2022"
-cmake --build . --config Release
-.\Release\snake-pro.exe
-```
+### Prerequisites
 
-### Linux/macOS
+- CMake 3.20+
+- C++17 compatible compiler
+- Raylib (auto-downloaded via FetchContent)
+
+### Build Commands
+
 ```bash
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . --parallel
-./snake-pro
 ```
 
 ## Controls
 
-- **Arrow Keys** or **WASD** - Move the snake
-- **P** - Pause/Resume
-- **R** - Restart (after game over)
-- **Q** or **ESC** - Quit
-
-## Features
-
-- Progressive difficulty (speed increases with score)
-- High score persistence
-- Color-coded rendering (green head, cyan body, yellow food)
-- Cross-platform terminal input handling
-- Clean OOP architecture
+| Key | Action |
+|-----|--------|
+| Arrow Keys / WASD | Move |
+| P / ESC | Pause |
+| R | Restart (Game Over) |
+| Q / ESC | Quit |
 
 ## Build Status
 
