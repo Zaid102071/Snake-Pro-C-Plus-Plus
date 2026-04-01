@@ -20,10 +20,10 @@ void ScoreManager::loadScores() {
     if (!file.is_open()) {
         return;
     }
-    
+
     int count;
     file.read(reinterpret_cast<char*>(&count), sizeof(count));
-    
+
     scores_.clear();
     for (int i = 0; i < count && i < Config::kHighScoreFileMax; ++i) {
         HighScoreEntry entry;
@@ -41,10 +41,10 @@ void ScoreManager::saveScores() const {
     if (!file.is_open()) {
         return;
     }
-    
+
     int count = std::min(static_cast<int>(scores_.size()), Config::kHighScoreFileMax);
     file.write(reinterpret_cast<const char*>(&count), sizeof(count));
-    
+
     for (int i = 0; i < count; ++i) {
         file.write(reinterpret_cast<const char*>(&scores_[i].score), sizeof(scores_[i].score));
         int dateLen = static_cast<int>(scores_[i].date.size());
@@ -56,18 +56,23 @@ void ScoreManager::saveScores() const {
 void ScoreManager::addScore(int score) {
     time_t now = time(nullptr);
     char buf[64];
-    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", localtime(&now));
-    
+    struct tm* timeinfo = localtime(&now);
+    if (timeinfo) {
+        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", timeinfo);
+    } else {
+        buf[0] = '\0';
+    }
+
     scores_.push_back({score, std::string(buf)});
     std::sort(scores_.begin(), scores_.end(),
               [](const HighScoreEntry& a, const HighScoreEntry& b) {
                   return a.score > b.score;
               });
-    
+
     if (scores_.size() > Config::kHighScoreFileMax) {
         scores_.resize(Config::kHighScoreFileMax);
     }
-    
+
     saveScores();
 }
 

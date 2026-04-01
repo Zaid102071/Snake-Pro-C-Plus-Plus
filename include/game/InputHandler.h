@@ -14,7 +14,6 @@ public:
     static void restoreTerminal();
     
 private:
-    bool running_;
 };
 
 }

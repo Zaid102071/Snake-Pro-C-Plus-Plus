@@ -2,13 +2,9 @@
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
-#include <sstream>
 
 #ifdef _WIN32
 #include <windows.h>
-#else
-#include <unistd.h>
-#include <sys/ioctl.h>
 #endif
 
 namespace snakepro {
@@ -22,7 +18,7 @@ void Renderer::clear() {
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO screen;
     DWORD written;
-    
+
     GetConsoleScreenBufferInfo(console, &screen);
     FillConsoleOutputCharacterA(console, ' ', screen.dwSize.X * screen.dwSize.Y, topLeft, &written);
     FillConsoleOutputAttribute(console, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE,
@@ -45,12 +41,12 @@ void Renderer::positionCursor(int x, int y) {
 void Renderer::render(const std::vector<Position>& snake, const Position& food,
                       int score, int highScore, int level, bool paused, bool gameOver) {
     clear();
-    
+
     std::cout << std::string(width_ + 4, ' ') << "\n";
     std::cout << "  ";
     for (int i = 0; i < width_; ++i) std::cout << Config::kBorderChar;
     std::cout << "  \n";
-    
+
     for (int y = 0; y < height_; ++y) {
         std::cout << Config::kBorderChar;
         for (int x = 0; x < width_; ++x) {
@@ -67,31 +63,31 @@ void Renderer::render(const std::vector<Position>& snake, const Position& food,
         }
         std::cout << Config::kBorderChar << "\n";
     }
-    
+
     std::cout << "  ";
     for (int i = 0; i < width_; ++i) std::cout << Config::kBorderChar;
     std::cout << "  \n";
-    
+
     std::cout << std::string(width_ + 4, ' ') << "\n";
-    
+
     std::cout << "  SCORE: " << std::setw(5) << score
               << "  HIGH: " << std::setw(5) << highScore
               << "  LEVEL: " << level << "\n";
-    
+
     if (paused) {
         std::cout << "\n  [PAUSED] Press P to resume\n";
     }
-    
+
     if (gameOver) {
         std::cout << "\n  [GAME OVER] Press R to restart or Q to quit\n";
     }
-    
+
     std::cout << std::flush;
 }
 
 void Renderer::renderMenu() {
     clear();
-    
+
     std::cout << "\n";
     std::cout << "  ========================================\n";
     std::cout << "           " << "\033[32m" << Config::kGameTitle << "\033[0m" << "\n";
@@ -108,7 +104,7 @@ void Renderer::renderMenu() {
 
 void Renderer::renderGameOver(int score, int highScore) {
     clear();
-    
+
     std::cout << "\n";
     std::cout << "  ========================================\n";
     std::cout << "            GAME OVER\n";

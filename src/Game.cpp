@@ -1,6 +1,13 @@
 #include "game/Game.h"
 #include <thread>
 #include <chrono>
+#include <algorithm>
+
+#ifdef _WIN32
+#include <conio.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace snakepro {
 
@@ -23,8 +30,7 @@ Game::~Game() {
 
 void Game::init() {
     renderer_.renderMenu();
-    
-    char c;
+
     while (true) {
         Direction dir = input_.pollInput();
         if (dir != Direction::None) {
@@ -32,7 +38,7 @@ void Game::init() {
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-    
+
     running_ = true;
     paused_ = false;
     gameOver_ = false;
@@ -44,62 +50,56 @@ void Game::run() {
     gameLoop();
 }
 
+int Game::getRawKey() {
+#ifdef _WIN32
+    if (_kbhit()) {
+        return _getch();
+    }
+#else
+    char c;
+    if (read(STDIN_FILENO, &c, 1) > 0) {
+        return static_cast<int>(c);
+    }
+#endif
+    return 0;
+}
+
 void Game::gameLoop() {
     while (running_) {
-        if (!paused_ && !gameOver_) {
-            handleInput();
-            update();
-            render();
-            std::this_thread::sleep_for(std::chrono::milliseconds(getSpeed()));
-        } else if (paused_) {
-            Direction dir = input_.pollInput();
-            if (dir == Direction::None) {
-                int key = 0;
-#ifdef _WIN32
-                if (_kbhit()) key = _getch();
-#else
-                char c;
-                if (read(STDIN_FILENO, &c, 1) > 0) key = c;
-#endif
-                if (key == 'p' || key == 'P') {
-                    paused_ = false;
-                } else if (key == 'q' || key == 'Q' || key == 27) {
-                    running_ = false;
-                }
+        if (paused_) {
+            int key = getRawKey();
+            if (key == 'p' || key == 'P') {
+                paused_ = false;
+            } else if (key == 'q' || key == 'Q' || key == 27) {
+                running_ = false;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        } else if (gameOver_) {
-            Direction dir = input_.pollInput();
-            if (dir == Direction::None) {
-                int key = 0;
-#ifdef _WIN32
-                if (_kbhit()) key = _getch();
-#else
-                char c;
-                if (read(STDIN_FILENO, &c, 1) > 0) key = c;
-#endif
-                if (key == 'r' || key == 'R') {
-                    resetGame();
-                } else if (key == 'q' || key == 'Q' || key == 27) {
-                    running_ = false;
-                }
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
         }
+
+        if (gameOver_) {
+            int key = getRawKey();
+            if (key == 'r' || key == 'R') {
+                resetGame();
+            } else if (key == 'q' || key == 'Q' || key == 27) {
+                running_ = false;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+
+        handleInput();
+        update();
+        render();
+        std::this_thread::sleep_for(std::chrono::milliseconds(getSpeed()));
     }
 }
 
 void Game::handleInput() {
     Direction dir = input_.pollInput();
-    
+
     if (dir == Direction::None) {
-        int key = 0;
-#ifdef _WIN32
-        if (_kbhit()) key = _getch();
-#else
-        char c;
-        if (read(STDIN_FILENO, &c, 1) > 0) key = c;
-#endif
+        int key = getRawKey();
         if (key == 'p' || key == 'P') {
             paused_ = true;
             return;
@@ -108,21 +108,21 @@ void Game::handleInput() {
             return;
         }
     }
-    
-    if (dir != Direction::None && dir != Direction::Up) {
+
+    if (dir != Direction::None) {
         snake_.setDirection(dir);
     }
 }
 
 void Game::update() {
     snake_.move();
-    
+
     if (snake_.getHead() == food_.getPosition()) {
         snake_.grow();
         score_ += Config::kScorePerFood;
         food_.spawn(width_, height_, snake_.getBody());
     }
-    
+
     if (snake_.checkSelfCollision() || snake_.checkWallCollision(width_, height_)) {
         gameOver_ = true;
         scoreManager_.addScore(score_);

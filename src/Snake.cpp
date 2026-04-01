@@ -17,10 +17,10 @@ void Snake::grow() {
 
 void Snake::move() {
     direction_ = nextDirection_;
-    
+
     Position head = getHead();
     Position newHead;
-    
+
     switch (direction_) {
         case Direction::Up:    newHead = {head.first, head.second - 1}; break;
         case Direction::Down:  newHead = {head.first, head.second + 1}; break;
@@ -28,7 +28,7 @@ void Snake::move() {
         case Direction::Right: newHead = {head.first + 1, head.second}; break;
         default:               return;
     }
-    
+
     body_.insert(body_.begin(), newHead);
     body_.pop_back();
 }
@@ -60,7 +60,7 @@ Food::Food() : position_(0, 0), rng_(std::random_device{}()) {}
 void Food::spawn(int width, int height, const std::vector<Position>& snakeBody) {
     std::uniform_int_distribution<int> distX(0, width - 1);
     std::uniform_int_distribution<int> distY(0, height - 1);
-    
+
     do {
         position_ = {distX(rng_), distY(rng_)};
     } while (std::find(snakeBody.begin(), snakeBody.end(), position_) != snakeBody.end());

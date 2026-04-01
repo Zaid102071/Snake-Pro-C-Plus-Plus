@@ -25,6 +25,7 @@ private:
     
     int getSpeed() const;
     int getLevel() const;
+    int getRawKey();
     
     Snake snake_;
     Food food_;
