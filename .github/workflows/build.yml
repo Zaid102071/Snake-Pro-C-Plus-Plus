@@ -9,48 +9,27 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.os }} (${{ matrix.config }})
-    runs-on: ${{ matrix.os }}
+    name: Windows (${{ matrix.config }})
+    runs-on: windows-latest
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         config: [Release, Debug]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies (Ubuntu)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libx11-dev libxrandr-dev libxcursor-dev libudev-dev libopenal-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libdrm-dev libgbm-dev
-
-      - name: Install dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install pkg-config
-
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DSFML_BUILD_WINDOW=ON -DSFML_BUILD_GRAPHICS=ON -DSFML_BUILD_SYSTEM=ON
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
 
       - name: Build
         run: cmake --build build --config ${{ matrix.config }} --parallel
 
-      - name: Upload artifact (Unix)
-        if: runner.os != 'Windows'
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: snake-pro-${{ runner.os }}-${{ matrix.config }}
-          path: build/snake-pro
-          retention-days: 30
-
-      - name: Upload artifact (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: snake-pro-${{ runner.os }}-${{ matrix.config }}
+          name: snake-pro-windows-${{ matrix.config }}
           path: build/snake-pro.exe
           retention-days: 30
