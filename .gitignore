@@ -1,0 +1,38 @@
+# Build
+build/
+cmake-build-*/
+out/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln
+*.vcxproj*
+.idea/
+*.swp
+*.swo
+*~
+
+# Binaries
+*.exe
+*.o
+*.obj
+*.pdb
+*.ilk
+*.lib
+*.dll
+
+# Game data
+highscore.dat
+
+# OS
+.DS_Store
+Thumbs.db
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
